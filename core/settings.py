@@ -25,7 +25,7 @@ SECRET_KEY = '0r_t)h0r_#3kl6*9-2rbi*!lsw-q8=&%jmp#b5qjvksyf0)2yt'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1',]
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', ]
 
 
 # Application definition
@@ -58,7 +58,7 @@ ROOT_URLCONF = 'core.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': ['templates/',],
+        'DIRS': ['templates/', ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -125,8 +125,8 @@ CRISPY_TEMPLATE_PACK = 'bootstrap3'
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = (
-        os.path.join(BASE_DIR, 'static'),
-    )
+    os.path.join(BASE_DIR, 'static'),
+)
 
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'dashboard:index'

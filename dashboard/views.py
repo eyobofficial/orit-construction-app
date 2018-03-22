@@ -3,9 +3,8 @@ from django.views import generic
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 
 # Import user authentication modules
-from django.contrib.auth import authenticate, login
-from django.contrib.auth.models import User, Group
-from django.contrib.auth.decorators import login_required, permission_required, user_passes_test
+from django.contrib.auth import authenticate
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin, UserPassesTestMixin
 
 # Import Message Framework
@@ -13,52 +12,54 @@ from django.contrib import messages
 from django.contrib.messages.views import SuccessMessageMixin
 
 # Import models
-from .models import (Consultant,
-                     Contractor,
-                     ProjectStatus,
-                     Project,
-                     VariationStatus,
-                     Variation,
-                     ClaimStatus,
-                     Claim, 
-                     InsuranceType, 
-                     InsuranceStatus, 
-                     Bank, 
-                     Insurance, )
+from .models import (
+    Consultant,
+    Contractor,
+    ProjectStatus,
+    Project,
+    VariationStatus,
+    Variation,
+    ClaimStatus,
+    Claim,
+    InsuranceType,
+    InsuranceStatus,
+    Bank,
+    Insurance,
+)
 
 # Import forms
-from .forms import (SignupForm,
-                    UserAccountForm,
-                    UserProfileForm, 
-                    ProjectForm,
-                    ProjectVariationForm,
-                    ProjectClaimForm, 
-                    InsuranceForm,  
-                    VariationForm,
-                    ClaimForm,)
+from .forms import (
+    SignupForm,
+    UserAccountForm,
+    UserProfileForm,
+    ProjectForm,
+    ProjectVariationForm,
+    ProjectClaimForm,
+    InsuranceForm,
+    VariationForm,
+    ClaimForm,
+)
 
 # Import Python modules
 import datetime
 
-# Check if user is committee
-def check_committee(user):
-    return user.profile.is_committee
 
 # Update Insurance Status
 def update_ins_status():
     for i in Insurance.objects.all():
         i.update_status()
 
+
 # Signup view
 def signup(request):
     """
-    Register a new user, login the new user and redirect to breakdowns:index page
+    Register a new user, login the new user and redirect to
+    breakdowns:index page
     """
 
     # Check if user already logged
     if request.user.is_authenticated:
         return redirect('dashboard:index')
-        
     form_class = SignupForm
     template_name = 'registration/signup.html'
 
@@ -70,7 +71,10 @@ def signup(request):
             last_name = form.cleaned_data.get('last_name')
             email = form.cleaned_data.get('email')
             form.save()
-            user = authenticate(username=form.cleaned_data['username'], password=form.cleaned_data['password1'])
+            user = authenticate(
+                username=form.cleaned_data['username'],
+                password=form.cleaned_data['password1']
+            )
             user.first_name = first_name
             user.last_name = last_name
             user.email = email
@@ -79,25 +83,33 @@ def signup(request):
 
             if user.profile.contractor.package.group != 1:
                 user.is_active = False
-                
             user.save()
-            messages.success(request, 'You have successfully created a new account.')
+            messages.success(
+                request,
+                'You have successfully created a new account.'
+            )
 
             if user.is_active is False:
-                messages.warning(request, 'Your account must be activated before you can start using it. Please contact the admin to quickly activate your account.')
-                
+                messages.warning(
+                    request,
+                    ('Your account must be activated before you can start '
+                     'using it. Please contact the admin to quickly activate '
+                     'your account.')
+                )
             return redirect('dashboard:index')
     else:
         form = form_class()
     return render(request, template_name, {
-            'form': form,
-        })
+        'form': form,
+    })
+
 
 @login_required
 def index(request):
     return render(request, 'dashboard/index.html', {
-            'page_name': 'dashboard',
-        })
+        'page_name': 'dashboard',
+    })
+
 
 class ProjectList(UserPassesTestMixin, generic.ListView):
     """
@@ -109,14 +121,15 @@ class ProjectList(UserPassesTestMixin, generic.ListView):
         return self.request.user.is_active
 
     def get_queryset(self, *args, **kwargs):
-        return Project.objects.filter(contractor=self.request.user.profile.contractor)
+        # return Project.objects.filter(contractor=self.request.user.profile.contractor)
+        return Project.my_projects.all(self.request.user)
 
     def get_context_data(self, *args, **kwargs):
         context = super(ProjectList, self).get_context_data(*args, **kwargs)
-        context['active_project_list'] = Project.objects.filter(contractor=self.request.user.profile.contractor).filter(status__level=10)
-        context['defect_project_list'] = Project.objects.filter(contractor=self.request.user.profile.contractor).filter(status__level=210)
-        context['closed_project_list'] = Project.objects.filter(contractor=self.request.user.profile.contractor).filter(status__level=110)
-        context['danger_project_list'] = Project.objects.filter(contractor=self.request.user.profile.contractor).filter(status__group=4)
+        context['active_project_list'] = Project.my_projects.active(self.request.user)
+        #context['defect_project_list'] = Project.objects.filter(contractor=self.request.user.profile.contractor).filter(status__level=210)
+        #context['closed_project_list'] = Project.objects.filter(contractor=self.request.user.profile.contractor).filter(status__level=110)
+        #context['danger_project_list'] = Project.objects.filter(contractor=self.request.user.profile.contractor).filter(status__group=4)
 
         context['pending_variation_list'] = Variation.objects.filter(project__contractor=self.request.user.profile.contractor).filter(status__group=2).order_by('-updated_at').count()
         context['expired_insurance_list'] = Insurance.objects.filter(project__contractor=self.request.user.profile.contractor).filter(status__level=310).count()

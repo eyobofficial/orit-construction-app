@@ -4,6 +4,8 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+from . import managers
+
 import datetime
 
 
@@ -186,20 +188,28 @@ class Project(models.Model):
     """
     Represents a Construction Project
     """
+    PROJECT_STATUS_CHOICES = (
+        ('active', 'Active'),
+        ('defect', 'Defect Liability Period'),
+        ('closed', 'Closed'),
+        ('suspended', 'Suspended'),
+        ('closed', 'Closed'),
+    )
     construction_type = models.ForeignKey(
         ConstructionType,
         on_delete=models.CASCADE,
+    )
+    status = models.CharField(
+        'Project Status',
+        max_length=60,
+        choices=PROJECT_STATUS_CHOICES,
+        default='active'
     )
     consultant = models.ForeignKey(Consultant, on_delete=models.CASCADE)
     contractor = models.ForeignKey(Contractor, on_delete=models.CASCADE)
     employer = models.CharField(
         max_length=100,
         help_text='Official full name of the Employer',
-    )
-    status = models.ForeignKey(
-        ProjectStatus,
-        default=1,
-        on_delete=models.CASCADE,
     )
     full_name = models.CharField(
         'Official Project Title',
@@ -252,6 +262,10 @@ class Project(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    # Custom Managers
+    objects = models.Manager()
+    my_projects = managers.ProjectManager()
 
     def save(self, *args, **kwargs):
         if self.commencement_date and self.period:
